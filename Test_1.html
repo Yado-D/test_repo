@@ -1,0 +1,3012 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      type="text/javascript"
+      async
+      src="https://polyfill.io/v3/polyfill.min.js?features=es6"
+    ></script>
+    <script
+      type="text/javascript"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <style>
+      :root {
+        --primary-color: #007bff;
+        --primary-hover-color: #0056b3;
+        --correct-color: lightgreen;
+        --incorrect-color: lightcoral;
+        --blur-radius: 5px;
+        --selected-border: 2px solid #007bff;
+        --background-color: white;
+        --text-color: black;
+        --border-color: #ccc;
+      }
+
+      [data-theme="dark"] {
+        --background-color: #121212;
+        --text-color: white;
+        --border-color: #333;
+        --primary-color: #1e90ff;
+        --primary-hover-color: #0b7dda;
+        --correct-color: #4caf50;
+        --incorrect-color: #f44336;
+      }
+      #accuracyStars,
+      #timeUsageStars {
+        color: gold;
+        font-size: 150%;
+      }
+
+      body {
+        font-family: Cambria;
+        margin: 15px;
+        padding: 5px;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Home Page Styles */
+      #subjectSelectionPage,
+      #homePage {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        text-align: center;
+      }
+
+      #subjectSelectionPage h1,
+      #homePage h1 {
+        margin-bottom: 20px;
+        font-size: 2em;
+        color: var(--primary-color);
+      }
+      #homePage h2 {
+        width: 100%;
+        margin-top: 20px;
+        margin-bottom: 0;
+        color: var(--text-color);
+      }
+
+      .year-selection {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        max-width: 90%;
+        margin: 0 auto;
+        margin-top: 20%;
+        margin-bottom: 30px;
+      }
+
+      .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--background-color);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+      }
+
+      .modal.active {
+        opacity: 1;
+        visibility: visible;
+        width: 70%;
+      }
+
+      .main-container-for-blur.blurred {
+        filter: blur(var(--blur-radius));
+        pointer-events: none;
+      }
+
+      .modal h2 {
+        margin-bottom: 20px;
+      }
+
+      .question {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        position: relative;
+        transition: border-color 0.3s ease;
+        overflow: auto;
+      }
+
+      /* <<< MODIFICATION: Styling for new item types */
+      .instruction-item,
+      .passage-item,
+      .topic-item {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #f0f0f0;
+        border-left: 5px solid var(--primary-color);
+      }
+      [data-theme="dark"] .instruction-item,
+      [data-theme="dark"] .passage-item,
+      [data-theme="dark"] .topic-item {
+        background-color: #222;
+        border-left-color: var(--primary-color);
+      }
+      .instruction-item {
+        font-weight: bold;
+        text-align: center;
+      }
+      .passage-item {
+        font-style: italic;
+      }
+      .topic-item {
+        font-size: 1.2em;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      .option {
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, border 0.3s ease,
+          transform 0.2s ease;
+      }
+
+      .option:hover {
+        transform: scale(1.02);
+      }
+
+      .option.selected {
+        border: var(--selected-border);
+        animation: pulse 0.5s ease;
+      }
+
+      .option.correct {
+        background-color: var(--correct-color);
+        color: white;
+        animation: bounce 0.5s ease;
+      }
+
+      .option.incorrect {
+        background-color: var(--incorrect-color);
+        color: white;
+        animation: shake 0.5s ease;
+      }
+
+      .show-answer {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+
+      .show-answer:hover {
+        background-color: var(--primary-hover-color);
+        transform: scale(1.05);
+      }
+
+      .answer {
+        margin-top: 10px;
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .start-button {
+        padding: 10px 20px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: block;
+        margin-bottom: 10px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+
+      .start-button:hover {
+        background-color: var(--primary-hover-color);
+        transform: scale(1.05);
+      }
+
+      h1 {
+        text-align: center;
+        margin-top: 50px;
+        font-size: 120%;
+      }
+
+      .theme-toggle {
+        position: fixed;
+        top: 70px;
+        left: 82%;
+        transform: translateX(-50%);
+        padding: 10px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        z-index: 2000;
+        font-size: 75%;
+        white-space: nowrap;
+      }
+
+      .timer {
+        position: fixed;
+        top: 75px;
+        left: 90px;
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--text-color);
+        font-size: 80%;
+        z-index: 2000;
+      }
+
+      .results-modal {
+        position: fixed;
+        top: 55%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        background: var(--background-color);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        z-index: 3000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+      }
+
+      .results-modal.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+        width: 60%;
+      }
+
+      .results-modal h2 {
+        margin-bottom: 20px;
+      }
+
+      .results-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: var(--text-color);
+      }
+
+      .results-modal .close-btn:hover {
+        color: var(--primary-color);
+      }
+
+      #score,
+      #scorePercentage,
+      #maxStreak {
+        font-weight: bold;
+      }
+
+      #maxStreak {
+        color: rgb(228, 131, 35);
+        font-size: 80%;
+      }
+
+      .progress-container {
+        width: 100%;
+        height: 20px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+        width: 0;
+        border-radius: 10px;
+        transition: width 1s ease;
+      }
+
+      .trophy-icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+        color: #ffd700;
+      }
+
+      .confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1001;
+        overflow: hidden;
+      }
+
+      .confetti-piece {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #ff0;
+        opacity: 0;
+        animation: confetti 2s ease-out;
+      }
+
+      @keyframes confetti {
+        0% {
+          transform: translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes bounce {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+      @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        50% {
+          transform: translateX(5px);
+        }
+        75% {
+          transform: translateX(-5px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .combo-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .combo-popup.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .combo-popup.fire {
+        background-color: #1e90ff;
+      }
+      .combo-popup.unstoppable {
+        background-color: #ff8c00;
+      }
+      .combo-popup.legendary {
+        background-color: #32cd32;
+      }
+
+      .stars-container {
+        margin: 20px 0;
+      }
+      .stars-container p {
+        margin: 5px 0;
+      }
+
+      .avatar-option {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.3s ease, transform 0.3s ease;
+      }
+      .avatar-option:hover {
+        transform: scale(1.1);
+      }
+      .avatar-option.selected {
+        border-color: var(--primary-color);
+      }
+
+      #nameModal input {
+        width: 90%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        font-size: 16px;
+        background-color: var(--background-color);
+        color: var(--text-color);
+      }
+
+      .profile-picture-container {
+        position: fixed;
+        top: 10px;
+        left: 5%;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        z-index: 2000;
+        background-color: var(--background-color);
+      }
+      .profile-picture {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .timer-progress-container {
+        position: fixed;
+        top: 35px;
+        left: 20%;
+        right: 10%;
+        width: 65%;
+        height: 16px;
+        background-color: rgb(119, 61, 2);
+        z-index: 1000;
+        transform: skewX(-45deg);
+      }
+      .timer-progress-bar {
+        height: 100%;
+        width: 100%;
+        background-color: rgb(228, 131, 35);
+        transition: width 1s linear;
+      }
+
+      .streak-progress-container {
+        position: fixed;
+        top: 55px;
+        left: -20px;
+        right: 10%;
+        width: calc(60% - 60px);
+        height: 10px;
+        background-color: #e0e0e0;
+        z-index: 1000;
+        margin: 0 auto;
+        padding: 2px;
+        transform: skewX(-40deg);
+      }
+      .streak-progress-bar {
+        height: 100%;
+        width: 0;
+        background-color: #ffd700;
+        transition: width 0.3s ease, background-color 0.3s ease;
+      }
+
+      #userNameDisplay {
+        position: fixed;
+        top: 10px;
+        left: 27%;
+        font-family: papyrus;
+        font-weight: bold;
+        margin-left: 10px;
+        font-size: 18px;
+        color: var(--text-color);
+        z-index: 2000;
+      }
+
+      #goodLuckModal button {
+        padding: 10px 20px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .BOOKLET_CODE,
+      .SUBJECT_CODE,
+      .TIME_ALLOWED {
+        text-align: left;
+        margin: 25px 12px;
+        font-weight: bold;
+      }
+      .TIME_ALLOWED {
+        margin-bottom: 70px;
+      }
+      .question p {
+        font-weight: bold;
+      }
+
+      #unblurAllBtn {
+        margin: 15px auto;
+        padding: 10px 25px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        margin-top: 100px;
+      }
+
+      #quitBtn {
+        position: fixed;
+        top: 115px; /* Position it below the timer and profile info */
+        left: 15px;
+        z-index: 2000;
+        padding: 8px 16px;
+        background-color: #dc3545; /* A standard 'danger' color */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 85%;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+
+      #quitBtn:hover {
+        background-color: #c82333; /* A darker red on hover */
+        transform: scale(1.05);
+      }
+
+      .summary-card {
+        background-color: var(--background-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .summary-card h2 {
+        margin-top: 0;
+        color: var(--primary-color);
+      }
+      .summary-card table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .summary-card th,
+      .summary-card td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .summary-card th {
+        font-weight: bold;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        margin: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: bold;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        display: inline-block;
+      }
+
+      .btn-primary:hover,
+      .btn-secondary:hover {
+        background-color: var(--primary-hover-color);
+        transform: scale(1.05);
+      }
+
+      .btn-secondary {
+        background-color: #6c757d; /* A neutral grey color */
+      }
+
+      .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="subjectSelectionPage">
+      <button id="viewAllResultsBtn" class="btn-primary">
+        📊 View My Progress
+      </button>
+
+      <h1>Select a Subject</h1>
+      <div class="year-selection">
+        <button class="subject-btn btn-primary" data-subject="English">
+          English 📚
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Maths">
+          Maths ➕
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Chemistry">
+          Chemistry 🧪
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Biology">
+          Biology 🧬
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Physics">
+          Physics ⚛️
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Geography">
+          Geography 🌍
+        </button>
+        <button class="subject-btn btn-primary" data-subject="History">
+          History 📜
+        </button>
+        <button class="subject-btn btn-primary" data-subject="Economics">
+          Economics 📈
+        </button>
+        <button class="subject-btn btn-primary" data-subject="SAT">
+          SAT 🎓
+        </button>
+      </div>
+    </div>
+
+    <div id="homePage" style="display: none">
+      <button
+        id="backToSubjectsBtn"
+        class="btn-secondary"
+        style="position: absolute; top: 20px; left: 20px"
+      >
+        ← Change Subject
+      </button>
+      <h1 id="modeSelectionTitle">Select a Practice Mode</h1>
+      <div class="year-selection">
+        <button id="showFullExamsBtn" class="btn-primary">Full Exams</button>
+        <button id="showChaptersBtn" class="btn-primary">Chapters</button>
+      </div>
+
+      <div id="fullExamsOptions" class="year-selection" style="display: none">
+        <h2>Select Exam Year</h2>
+        <!-- Year buttons populated by JS -->
+      </div>
+
+      <div id="gradeSelection" class="year-selection" style="display: none">
+        <h2>Select Grade</h2>
+        <!-- Grade buttons populated by JS -->
+      </div>
+
+      <div
+        id="chapterNumberSelection"
+        class="year-selection"
+        style="display: none"
+      >
+        <!-- Chapter buttons populated by JS -->
+      </div>
+    </div>
+
+    <!-- Quiz Section -->
+    <div id="quizSection" style="display: none">
+      <audio id="correctSound1" src="correctSound1.mp3"></audio>
+      <audio id="correctSound2" src="correctSound1.mp3"></audio>
+      <audio id="correctSound3" src="correctSound1.mp3"></audio>
+      <audio id="wrongSound1" src="correctSound1.mp3"></audio>
+      <audio id="wrongSound2" src="correctSound1.mp3"></audio>
+      <audio id="wrongSound3" src="correctSound1.mp3"></audio>
+      <audio id="completedSound" src="correctSound1.mp3"></audio>
+      <audio id="failedSound" src="correctSound1.mp3"></audio>
+
+      <div class="profile-picture-container">
+        <img
+          src="profilePicture.png"
+          alt="Profile Picture"
+          class="profile-picture"
+        />
+      </div>
+
+      <span id="userNameDisplay"></span>
+      <div class="timer-progress-container" id="timerProgressContainer">
+        <div class="timer-progress-bar" id="timerProgressBar"></div>
+      </div>
+      <div class="streak-progress-container" id="streakProgressContainer">
+        <div class="streak-progress-bar" id="streakProgressBar"></div>
+      </div>
+      <div class="combo-popup" id="comboPopup"></div>
+      <button class="theme-toggle" id="themeToggle">Dark Mode🌙</button>
+      <div class="timer" id="timer">03:00:00</div>
+      <button id="quitBtn" onclick="askToQuit()">❌ Quit</button>
+
+      <div class="modal" id="goodLuckModal">
+        <h2>Good Luck! 🍀</h2>
+        <p>You've chosen to see answers at the end. Do your best!</p>
+        <button id="closeGoodLuckModal" class="btn-primary">Let's Begin</button>
+      </div>
+      <div class="modal" id="preferenceModal">
+        <h2>🔍 Display Answer: 📢</h2>
+        <button id="showImmediately" class="btn-primary">⚡ Immediately</button>
+        <button id="showAtEnd" class="btn-primary">
+          ⏳ By the end of Quiz
+        </button>
+      </div>
+
+      <!-- Avatar Selection Modal -->
+      <div class="modal" id="avatarModal">
+        <h2>Choose Your Avatar 🤖🦸‍♀️👾🦄</h2>
+        <div>
+          <img
+            src="avatar1.png"
+            alt="Avatar 1"
+            class="avatar-option"
+            data-avatar="avatar1.png"
+          />
+          <img
+            src="avatar1.png"
+            alt="Avatar 2"
+            class="avatar-option"
+            data-avatar="Avatar2.png"
+          />
+        </div>
+        <button id="confirmAvatar" class="btn-primary">Confirm</button>
+      </div>
+
+      <div class="modal" id="nameModal">
+        <h2>Enter Your Name</h2>
+        <input
+          type="text"
+          id="userNameInput"
+          placeholder="Your Name"
+          maxlength="20"
+        />
+        <button id="confirmName" class="btn-primary">Confirm</button>
+      </div>
+
+      <div class="results-modal" id="resultsModal">
+        <button class="close-btn" id="closeResultsModal">✕</button>
+        <h2>🎉RESULTS🎉</h2>
+        <div class="trophy-icon">🏆</div>
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p id="score"></p>
+        <p id="scorePercentage"></p>
+        <p id="maxStreak"></p>
+        <div class="stars-container">
+          <p><b>🎯Accuracy</b>: <span id="accuracyStars"></span></p>
+          <p><b>⏱️Time Usage</b>: <span id="timeUsageStars"></span></p>
+        </div>
+        <p id="averageTimePerQuestion"></p>
+        <button id="tryAgainBtn" class="btn-primary">🔁 Try Again</button>
+        <button id="goHomeBtn" class="btn-secondary">🏠 Go back to Home</button>
+      </div>
+
+      <div class="confetti" id="confettiContainer"></div>
+      <div class="main-container-for-blur">
+        <div class="container">
+          <h1 id="quizTitle">...</h1>
+          <div class="BOOKLET_CODE">BOOKLET CODE: 028</div>
+          <div class="SUBJECT_CODE">SUBJECT: ...</div>
+          <div class="TIME_ALLOWED">TIME ALLOWED: 3 HOURS</div>
+          <div class="questions-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD THIS NEW SECTION TO YOUR HTML BODY -->
+    <div
+      id="allResultsPage"
+      style="display: none; padding: 20px; max-width: 900px; margin: auto"
+    >
+      <button id="backToHomeFromResults" class="btn-secondary">
+        ← Back to Home
+      </button>
+      <h1>Your Progress Summary</h1>
+
+      <div class="summary-card">
+        <h2>Overall Performance</h2>
+        <p>
+          <strong>Total Score:</strong> <span id="totalScoreDisplay"></span>
+        </p>
+        <p>
+          <strong>Average Score:</strong>
+          <span id="averageScoreDisplay"></span>%
+        </p>
+      </div>
+
+      <div class="summary-card">
+        <h2>Full Exam Performance</h2>
+        <table id="examSummaryTable">
+          <thead>
+            <tr>
+              <th>Exam</th>
+              <th>Normalized Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Exam results will be populated here by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="summary-card">
+        <h2>Chapter Performance</h2>
+        <table id="chapterSummaryTable">
+          <thead>
+            <tr>
+              <th>Chapter</th>
+              <th>Correct</th>
+              <th>Total</th>
+              <th>Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Chapter results will be populated here by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      let selectedSubject = "";
+      let questions = [];
+      let currentQuizId = null;
+      let currentQuizParams = {};
+
+      function saveQuizProgress() {
+        // Don't save if there's no active quiz ID
+        if (!currentQuizId) {
+          return;
+        }
+
+        const quizState = {
+          quizId: currentQuizId,
+          subject: selectedSubject,
+          userAnswers: userAnswers,
+          currentQuizMode: currentQuizMode,
+          showAnswersImmediately: showAnswersImmediately,
+          userName: document.getElementById("userNameDisplay").textContent,
+          avatar: document.querySelector(".profile-picture").src,
+          quizTitle: document.getElementById("quizTitle").textContent,
+          quizParams: currentQuizParams, // Save the parameters used to start the quiz
+        };
+
+        // Save the lean state object to localStorage
+        localStorage.setItem(currentQuizId, JSON.stringify(quizState));
+        console.log("Quiz progress autosaved for:", currentQuizId); // For debugging
+      }
+
+      /**
+       * Represents the result of a single exam session.
+       */
+      // Find and REPLACE the existing ExamProgress class
+      class ExamProgress {
+        constructor({
+          subject,
+          year,
+          score,
+          total,
+          isCompleted,
+          timestamp,
+          userAnswers,
+        }) {
+          this.subject = subject;
+          this.year = year; // For full exams
+          this.score = score;
+          this.total = total;
+          this.isCompleted = isCompleted;
+          this.timestamp = timestamp ? new Date(timestamp) : new Date();
+          this.userAnswers = userAnswers || []; // Store individual answers
+        }
+
+        toMap() {
+          return {
+            subject: this.subject,
+            year: this.year,
+            score: this.score,
+            total: this.total,
+            isCompleted: this.isCompleted,
+            timestamp: this.timestamp.toISOString(),
+            userAnswers: this.userAnswers,
+          };
+        }
+
+        static fromMap(map) {
+          return new ExamProgress({
+            subject: map.subject,
+            year: map.year,
+            score: map.score,
+            total: map.total,
+            isCompleted: map.isCompleted,
+            timestamp: map.timestamp,
+            userAnswers: map.userAnswers,
+          });
+        }
+      }
+
+      var listOfStudentExamInfo = [];
+      const savedProgress = localStorage.getItem("studentProgressData");
+      if (savedProgress) {
+        try {
+          listOfStudentExamInfo = JSON.parse(savedProgress);
+        } catch (e) {
+          console.error("Could not parse saved progress data:", e);
+          listOfStudentExamInfo = []; // Start fresh if data is corrupted
+        }
+      }
+
+      const allExams = {
+        Physics: [],
+        Maths: [],
+        English: [],
+        Biology: [
+          {
+            id: "Biology_2016_q1",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which of the following steps in the scientific method comes following observation?",
+            options: [
+              { text: "A. Prediction", correct: false },
+              { text: "B. Hypothesis", correct: true },
+              { text: "C. Experiment", correct: false },
+              { text: "D. Theory", correct: false },
+            ],
+            explanation:
+              "❖ Prediction is an educated guess as to how the biologist thinks his/her experiment will turn out.\n❖ Hypothesis: observations provide the raw material, which leads to the formation of hypothesis. Hypothesis could be defined as suggested explanation of certain observed phenomena.\n❖ Experiment :Hypothesis are often tested by experimentation.\n❖ Theory: A hypothesis that has with stood many tests and has been shown to allow prediction to be made is known as a theory.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 1,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q2",
+            subject: "Biology",
+            examYear: "2016",
+            text: "The main component of the plant cell wall is ___?",
+            options: [
+              { text: "A. Starch", correct: false },
+              { text: "B. Cellulose", correct: true },
+              { text: "C. Protein", correct: false },
+              { text: "D. Chitin", correct: false },
+            ],
+            explanation:
+              "❖ Starch: is a polymer of ∝ - glucose.It is a major fuel store in plants, but is absent from animals where the equivalent is glycogen.\n❖ Cellulose is a polymer of ẞ – glucose unlike starch and glycogen it has a structural role. About 50% the carbon found in plants is in cellulose.\n❖ Protein: All proteins contain four essential elements; carbon, hydrogen, oxygen and nitrogen. These elements are bonded together to form compounds called amino acids. Amino acids join to form protein molecules.\n❖ Chitin: is closely related to cellulose in structure and function being a structural polysaccharide. It occurs in some fungi where its fibrous nature contributes to cell wall structure.",
+            assignments: [
+              {
+                grade: "12",
+                curriculum: "new",
+                chapter: 1,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q3",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which of the following classes of enzymes digests carbohydrates?",
+            options: [
+              { text: "A. Amylases", correct: true },
+              { text: "B. Lipases", correct: false },
+              { text: "C. Proteases", correct: false },
+              { text: "D. Nucleases", correct: false },
+            ],
+            explanation:
+              "❖ Amylase is an enzyme that acts on starch (carbohydrate)to convert it to maltose (disaccharides).\n❖ Lipase is an enzyme that changes fats and oils into fatty acids and glycerol's.\n❖ Proteases is acts on protein to convert to peptides.\n❖ Nucleasses is any of a class of enzymes that degrade nucleic acid (DNA or RNA) into shorter oligonucleotides or single nucleotide sub units by hydrolyzing sugar - phosphate bonds in the nucleic acid back bone.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 3,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q4",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which of the following kingdoms of life is consisting of prokaryotic organisms?",
+            options: [
+              { text: "A. Fungi", correct: false },
+              { text: "B. Monera", correct: true },
+              { text: "C. Protista", correct: false },
+              { text: "D. Plantae", correct: false },
+            ],
+            explanation:
+              "❖ Fungi are eukaryotes organisms where their body is composed of threads or tube like structures called hyphae.\n❖ Monera is includes organisms, the cells of which are prokaryotic. That is they lack a nuclear memebrane around their nuclear material.\n❖ Protista is according to some biologists kingdom protista contains only unicellular eukaryotes. But other biologists include also multicellular algae with in this group.\n❖ Kingdom plantae: they are eukaryotic multicelluar. They have a cell wall made up of cellulose and other polysaccharides.",
+            assignments: [
+              {
+                grade: "12",
+                curriculum: "new",
+                chapter: 4,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q5",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which component of soil fertility is improved when farmers grow legumes in crop rotation?",
+            options: [
+              { text: "A. Phosphorus", correct: false },
+              { text: "B. Nitrogen", correct: true },
+              { text: "C. Sulfur", correct: false },
+              { text: "D. Carbon", correct: false },
+            ],
+            explanation:
+              "Explanation: Legumes are plants that harbour nitrogen fixing bacteria in their root nodules. Nitrogen fixing bacteria converts the atmospheric nitrogen gas (N₂) in to ammonium ions which later are converted to nitrates (the form plants absorb from these soil). When farmers include legumes in their crop rotation they improve the content of nitrogen compounds in the soil which is one of the important nutried for making protein in plants.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 6,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q6",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Before making crosses, which part of the flower did Mendel remove to avoid self pollination?",
+            options: [
+              { text: "A. Stigma", correct: false },
+              { text: "B. Ovule", correct: false },
+              { text: "C. Ovary", correct: false },
+              { text: "D. Stamens", correct: true },
+            ],
+            explanation:
+              "Explanation: In his experiments of crosses Mendel crossed plants of contrasting characteristics (example, tall and short). In the crossing he transferred pollen grain from the stamens of one of the plant that donates pollen grain to the stigma of another plant the receive the pollen grain. Before doing this he removed the stamens of the plant that receive the pollen grain before they matured to avoid self pollination of this plant.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 4,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q7",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which one of the following do bees use to inform other bees about the location and distance of a new source of nectar they discover?",
+            options: [
+              { text: "A. Pheromones", correct: false },
+              { text: "B. Waggle dance", correct: true },
+              { text: "C. Buzzing noise", correct: false },
+              { text: "D. Vibration of wings.", correct: false },
+            ],
+            explanation:
+              "Explanation: Workers bees communicate with each other in a very special way to convey information about the location and distance of the new source of nectar. Foragers perform a waggle- dance on the honey comb to inform other workers of the direction of the nectar source and its distance. The dance takes the form of a figure of eight on the vertical face of the honey comb.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 2,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q8",
+            subject: "Biology",
+            examYear: "2016",
+            text: "One of the following molecules is the building units of an enzyme molecule.",
+            options: [
+              { text: "A. Amino acids", correct: true },
+              { text: "B. Glucose", correct: false },
+              { text: "C. Nucleotides", correct: false },
+              { text: "D. Fatty acids", correct: false },
+            ],
+            explanation:
+              "❖ Amino acids are the building blocks or units of protein. All enzymes are protein, hence the building blocks of enzymes.\n❖ Glucose is the building blocks or units of polysaccharides such as ,starch glycogen and cellulose.\n❖ Nucleotides are the building blocks or monomers of the nucleic acids (DNA and RNA) polymers.\n❖ Fatty acids are parts of fats and oils. Three fatty acids join to one glycerol molecule forms a fat or oil molecule.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 3,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q9",
+            subject: "Biology",
+            examYear: "2016",
+            text: "Which one of the following is the main constituent of biological membranes?",
+            options: [
+              { text: "A. Phospholipids", correct: true },
+              { text: "B. Glycoprotein's", correct: false },
+              { text: "C. Glycolipids", correct: false },
+              { text: "D. Cholesterols", correct: false },
+            ],
+            explanation:
+              'Explanation:\nPhospholipids are formed when two fatty acid molecules are bonded to the glycerol and the place of third fatty acid is taken by a phosphate group. In water, phosphor lipids become organized in to bilayer.\nPhospholipids bilayers are the basis of plasma membrane\nGlycoproteins are protein with branching carbohydrate side chains like "antennae".\nGlycolipids also have branching carbohydrate side chains (lipids with branching carbohydrate side chain) and are involved in cell to cell recognition. They may act as receptor sites for chemical signals.\nCholesterols are like unsaturated fatty acids cholesterol disturbs the loose packing of phospholipids and keeps them more fluid. Cholesterol also increases flexibility and stability of membranes',
+            assignments: [
+              {
+                grade: "12",
+                curriculum: "new",
+                chapter: 1,
+              },
+            ],
+          },
+          {
+            id: "Biology_2016_q10",
+            subject: "Biology",
+            examYear: "2016",
+            text: "One of the following biomes in Africa is supporting large wild mammals such as elephants, giraffes and lions.",
+            options: [
+              { text: "A. The Congo Rainforest", correct: false },
+              {
+                text: "B. The Rain Forest of western Ethiopia.",
+                correct: false,
+              },
+              { text: "C. The Savanna Grass land", correct: true },
+              { text: "D. The Sahara Desert.", correct: false },
+            ],
+            explanation:
+              "Explanation:\n❖TheCongo rain forest is the part of tropical rain forest of the world having almost similar major characteristics. It is an ecosystem with high temperature and high rain fall. Epiphytes , climbers, evergreen and deciduous broad- leaved tree and bamboo are the vegetation of the ecosystem harbouring insects reptiles, birds and arboreal animals.\n❖ The rain forest of Western Ethiopia: is distributed in Wollega, Illubabor, Bale and Southern Keffa at altitudes ranging from 800-2500 m. The vegetation of this ecosystem is dominated by moist evergreen montane forest. The major mammals species are blue monkey, Bush buck, Great forest hog, Wild pig, etc.\n❖ Savanna Grass lands are tropical grass lands often with scattered trees. They are largely found in Africa, but also found in Australia, South America and Southern Asia. The savanna grass lands of East Africa are known for their wild games which are in abundance. These includes mammals such as elephants, rhinoceroses, leopards, giraffes and lions.\n❖ The sahara desert: Deserts usually receive less than 250mm of annual, rain fall and rain is unpredictable. The animal life of the biome includes rats ,insects and camels.",
+            assignments: [
+              {
+                grade: "11",
+                curriculum: "new",
+                chapter: 6,
+              },
+            ],
+          },
+        ],
+        Chemistry: [],
+        History: [],
+        Geography: [
+          {
+            id: "geo_2016_q1",
+            subject: "Geography",
+            examYear: "2016",
+            text: "What is the effect of latitude on ecosystem diversity? Ecosystem diversity (2016)",
+            options: [
+              {
+                text: "A. Increases as we go from the equator to the poles.",
+                correct: false,
+              },
+              {
+                text: "B. Decreases from the poles towards the equator.",
+                correct: false,
+              },
+              {
+                text: "C. Remains similar wherever we go mainly due to the effect of altitude",
+                correct: false,
+              },
+              {
+                text: "D. Decreases gradually when we travel from the equator to Tundra.",
+                correct: true,
+              },
+            ],
+            explanation:
+              "Ecosystem diversity is highest near the equator due to stable, warm, and wet conditions that support a wide variety of life. As one moves towards higher latitudes, such as the Tundra, the climate becomes colder and harsher, with shorter growing seasons. This limits the types of organisms that can survive, leading to a gradual decrease in ecosystem diversity.",
+            assignments: [
+              {
+                grade: "9",
+                curriculum: "old",
+                chapter: 2,
+              },
+            ],
+          },
+          {
+            id: "geo_2016_q2",
+            subject: "Geography",
+            examYear: "2016",
+            text: "Which one of the following relates to the economic policies of Ethiopia? (2016)",
+            options: [
+              {
+                text: "A. Encouraging over-exploitation of fossil fuels",
+                correct: false,
+              },
+              {
+                text: "B. Promoting regional administration in economic management",
+                correct: true,
+              },
+              {
+                text: "C. Focusing on shifting urban labor force to rural-based economy",
+                correct: false,
+              },
+              {
+                text: "D. Emphasizing on an economic system fully controlled by the state",
+                correct: false,
+              },
+            ],
+            explanation:
+              "Ethiopia's economic policies, particularly since the adoption of the federal system, have emphasized decentralization and the promotion of regional administrations in economic planning and management. This approach aims to empower regions to manage their own resources and tailor development strategies to local needs, moving away from a fully state-controlled system.",
+            assignments: [
+              {
+                grade: "9",
+                curriculum: "old",
+                chapter: 4,
+              },
+            ],
+          },
+          {
+            id: "geo_2016_q3",
+            subject: "Geography",
+            examYear: "2016",
+            text: "Which physical element is the base to conduct a regional study? (2016)",
+            options: [
+              {
+                text: "A. Religion",
+                correct: false,
+              },
+              {
+                text: "B. Culture",
+                correct: false,
+              },
+              {
+                text: "C. Climate",
+                correct: true,
+              },
+              {
+                text: "D. Language",
+                correct: false,
+              },
+            ],
+            explanation:
+              "Climate is a fundamental physical element that influences many other aspects of a region, including its vegetation, soil types, water resources, agricultural potential, and even settlement patterns. Therefore, it often serves as a primary basis for defining and conducting a regional study.",
+            assignments: [
+              {
+                grade: "9",
+                curriculum: "old",
+                chapter: 2,
+              },
+            ],
+          },
+        ],
+        Economics: [],
+        SAT: [],
+      };
+
+      const subjectMetadata = {
+        Physics: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "Vectors",
+              "Motion in a Straight Line",
+              "Forces and Newton’s Laws of Motion",
+              "Work, Energy and Power",
+              "Simple Machines",
+            ],
+            g10_old: [
+              "Motion in 2D",
+              "Electrostatics",
+              "Current Electricity",
+              "Electromagnetism",
+              "Introduction to Electronics",
+              "Electromagnetic Waves and Geometrical Optics",
+            ],
+            g9_new: [
+              "Physics and Human Society",
+              "Physical Quantities",
+              "Motion in a Straight Line",
+              "Force, Work and Energy",
+              "Simple Machines",
+              "Mechanical Oscillation and Sound Wave",
+              "Temperature and Thermometry",
+            ],
+            g10_new: [
+              "Vector Quantities",
+              "Uniformly Accelerated Motion",
+              "Elasticity and Static Equilibrium of Rigid Body",
+              "Static and Current Electricity",
+              "Magnetism",
+              "Electromagnetic Waves and Geometrical Optics",
+            ],
+            g11: [
+              "Physics and Human Society",
+              "Vectors",
+              "Motion in One and Two Dimensions",
+              "Dynamics",
+              "Heat Conduction and Calorimetry",
+              "Electrostatics and Electric Circuit",
+              "Nuclear Physics",
+            ],
+            g12: [
+              "Application of Physics in Other Fields",
+              "Two-dimensional Motion",
+              "Fluid Mechanics",
+              "Electromagnetism",
+              "Basics of Electronics",
+            ],
+          },
+        },
+        Maths: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "The Number System",
+              "Solutions of Equations",
+              "Further on Sets",
+              "Relations and Functions",
+              "Geometry and Measurement",
+              "Statistics and Probability",
+              "Vectors in Two Dimensions",
+            ],
+            g10_old: [
+              "Polynomial Functions",
+              "Exponential and Logarithmic Functions",
+              "Solving Inequalities",
+              "Coordinate Geometry",
+              "Trigonometric Functions",
+              "Plane Geometry",
+              "Measurement",
+            ],
+            g9_new: [
+              "Further on Sets",
+              "The Number System",
+              "Solving Equations",
+              "Solving Inequalities",
+              "Introduction to Trigonometry",
+              "Regular Polygons",
+              "Congruency and Similarity",
+              "Vectors in Two Dimensions",
+              "Statistics and Probability",
+            ],
+            g10_new: [
+              "Relations and Functions",
+              "Polynomial Functions",
+              "Exponential and Logarithmic Functions",
+              "Trigonometric Functions",
+              "Circles",
+              "Solid Figures",
+              "Coordinate Geometry",
+            ],
+            g11: [
+              "Relations and Functions",
+              "Rational Expressions and Rational Functions",
+              "Matrices",
+              "Determinants and their Properties",
+              "Vectors",
+              "Transformations of the Plane",
+            ],
+            g12: [
+              "Sequences and Series",
+              "Introductions to Calculus",
+              "Statistics",
+              "Introduction to Linear Programming",
+              "Mathematical Applications in Business",
+            ],
+          },
+        },
+        English: {
+          gradeStructure: "none",
+          chapterNames: {
+            all: [
+              "Tense",
+              "Conditional Sentence",
+              "Punctuation and Capitalization",
+              "Communication Activity",
+              "Preposition and Conjunction",
+              "Paragraph Coherence",
+              "Word Order",
+              "Meaning of Sentences",
+              "Vocabulary Substitution",
+              "Vocabulary Completion",
+              "Passage",
+              "Other Grammar questions",
+              "Spelling",
+              "Letter",
+              "Writing",
+            ],
+          },
+        },
+        Chemistry: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "Structure of the Atom",
+              "Periodic Classification of the Elements",
+              "Chemical Bonding and Intermolecular Forces",
+              "Chemical Reaction and Stoichiometry",
+              "Physical States of Matter",
+            ],
+            g10_old: [
+              "Introduction to Organic Chemistry",
+              "Important Inorganic Compounds",
+              "Electrochemistry",
+              "Chemistry in Industry and Environmental Pollution",
+            ],
+            g9_new: [
+              "Chemistry and Its Importance",
+              "Measurements and Scientific Methods",
+              "Structure of the Atom",
+              "Periodic Classification of Elements",
+              "Chemical Bonding",
+            ],
+            g10_new: [
+              "Chemical Reactions and Stoichiometry",
+              "Solutions",
+              "Important Inorganic Compounds",
+              "Energy Changes and Electrochemistry",
+              "Metals and Nonmetals",
+              "Hydrocarbons and Their Natural Sources",
+            ],
+            g11: [
+              "Atomic Structure and Periodic Properties of the Elements",
+              "Chemical Bonding",
+              "Physical State of Matter",
+              "Chemical Kinetics",
+              "Chemical Equilibrium",
+              "Some Important Oxygen-Containing Organic Compounds",
+            ],
+            g12: [
+              "Acid-Base Equilibria",
+              "Electrochemistry",
+              "Industrial Chemistry",
+              "Polymers",
+              "Introduction to Environmental Chemistry",
+            ],
+          },
+        },
+        Biology: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "Biology and Technology",
+              "Cell Biology",
+              "Human Biology and Health",
+              "Micro-organisms and Disease",
+              "Classification",
+              "Environment",
+            ],
+            g10_old: [
+              "Biotechnology",
+              "Heredity",
+              "Human Biology and Health",
+              "Food Making and Growth in Plants",
+              "Conservation of Natural Resources",
+            ],
+            g9_new: [
+              "Introduction to Biology",
+              "Characteristics and Classification of Organisms",
+              "Cells",
+              "Reproduction",
+              "Human Health, Nutrition, and Disease",
+              "Ecology",
+            ],
+            g10_new: [
+              "Sub-fields of Biology",
+              "Plants",
+              "Biochemical Molecules",
+              "Cell Reproduction",
+              "Human Biology",
+              "Ecological Interaction",
+            ],
+            g11: [
+              "Biology and Technology",
+              "Animals",
+              "Enzymes",
+              "Genetics",
+              "The Human Body Systems",
+              "Population and Natural Resources",
+            ],
+            g12: [
+              "Application of Biology",
+              "Microorganisms",
+              "Energy Transformation",
+              "Evolution",
+              "Human Body System",
+              "Climate Change",
+            ],
+          },
+        },
+        History: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "Early Human Beings, The Neolithic Revolution and Emergence of State",
+              "Ancient and Classical World Civilizations",
+              "States in the Ethiopian Region and the Horn of Africa up to 1529",
+              "Medieval Europe and Development of Early Capitalism",
+              "Inter-State Conflicts in the Horn of Africa and the Oromo Population Movement",
+              "The Christian Kingdom and Peoples and States in the Rest of the Ethiopian Region (1543-1855)",
+              "Peoples and States in Pre-Colonial Africa and the Trans-Atlantic Slave Trade up to 1800",
+              "Industrial Capitalism and the Western World",
+            ],
+            g10_old: [
+              "Developed Capitalism and Colonialism in the 19th Century",
+              "The Formation of the Modern Ethiopian Empire (1855-1906)",
+              "The Ethiopian Empire and the Emergence of Autocracy 1906 - 1935",
+              "African Resistance to Colonialism and the Struggle Against Colonial Rule",
+              "Italo-Ethiopian War (1935 - 41) and its Aftermath",
+              "Post Second World War Global Developments",
+              "Africa Since 1945",
+              "Ethiopian From 1914 to 1991",
+            ],
+            g9_new: [
+              "The Discipline of History and Human Evolution",
+              "Ancient World Civilizations up to c. 500 AD",
+              "Peoples and States in Ethiopia and the Horn to the end of 13th C.",
+              "The Middle Ages and Early Modern World, C. 500 to 1750s",
+              "Peoples and States of Africa to 1500",
+              "Africa and the Outside World 1500- 1880s",
+              "States, Principalities, Population Movements & Interactions in Ethiopia 13th to Mid-16th C.",
+              "Political, Social and Economic Processes in Ethiopia Mid- 16th to Mid- 19th C.",
+              "The Age of Revolutions 1750s to 1815",
+            ],
+            g10_new: [
+              "Development of Capitalism and Nationalism 1815-1914",
+              "Africa & the Colonial Experience (1880s -1960s)",
+              "Social, Economic & Political Developments in Ethiopia mid 19thc to 1941",
+              "Society and Politics in the Age of World Wars 1914-1945",
+              "Global and Regional Developments Since 1945",
+              "Ethiopia: Internal Developments and External Influences from 1941 to 1991",
+              "Africa Since 1960",
+              "Post- 1991 Developments in Ethiopia",
+              "Indigenous Knowledge and Heritages of Ethiopia",
+            ],
+            g11: [
+              "History, Historiography, and Human Evolution",
+              "Major Spots of Ancient World Civilizations up to c.500 A.D",
+              "Peoples, States and Historical Processes in Ethiopia and the Horn to the end of the 13th Century",
+              "The Middle Ages and Early Modern World, c. 500 AD-1789",
+              "Peoples and States of Africa to 1500",
+              "Africa and the Outside World: 1500-1880s",
+              "States, Principalities, Population Movements and Interactions in Ethiopia",
+              "Political, Social and Economic Processes in Ethiopia, Mid 16th to Mid-19th Century",
+              "The Age of Revolutions, 1789 to 1815",
+            ],
+            g12: [
+              "Development of Capitalism and Nationalism from 1815 to 1914",
+              "Africa and the Colonial Experience (1880s – 1960s)",
+              "Social, Economic and Political Developments in Ethiopia, Mid, 19th C. to 1941",
+              "Society and Politics in the Age of World Wars, 1914 - 1945",
+              "Global and Regional Developments Since 1945",
+              "Ethiopia: Internal Developments and External Influences from 1941 to 1991",
+              "Africa since the 1960s",
+              "Post 1991 Developments in Ethiopia",
+              "Indigenous Knowledge Systems and Heritages of Ethiopia",
+            ],
+          },
+        },
+        Geography: {
+          gradeStructure: "new_old",
+          chapterNames: {
+            g9_old: [
+              "The Concept of Geography and Map-Reading",
+              "Physical Environment of the World and Ethiopia",
+              "Human Population and Economic Activities",
+              "Public and Policy Related Issues in Ethiopia",
+            ],
+            g10_old: [
+              "Map Reading",
+              "The Physical Environment of the World and Ethiopia",
+              "World Population",
+              "Economic System and Development",
+            ],
+            g9_new: [
+              "Geological History and Topography of Ethiopia",
+              "Climate of Ethiopia",
+              "Natural Resource Base of Ethiopia",
+              "Population and Demographic Characteristics of Ethiopia",
+              "Major Economic and Cultural Activities in Ethiopia",
+              "Human – Natural Environment Interactions in Ethiopia",
+              "Contemporary Geographic Issues and Public Concerns in Ethiopia",
+              "Geographic Inquiry Skills and Techniques",
+            ],
+            g10_new: [
+              "Landforms of Africa",
+              "Climate of Africa",
+              "Natural Resource Base of Africa",
+              "Population of Africa",
+              "Major Economic and Cultural Activities of Africa",
+              "Human – Natural Environment Interactions",
+              "Geographic Issues and Public Concerns in Africa",
+              "Geospatial Information and Data Processing",
+            ],
+            g11: [
+              "Climate Classification and Climate Regions of Our World",
+              "Natural Resources and Conflicts Over Resources",
+              "Global Population Dynamics and Challenges",
+              "Geography and Economic Development",
+              "Major Global Environmental Changes",
+              "Geographic Issues and Public Concerns",
+              "Geo-Spatial Information and Data Processing",
+            ],
+            g12: [
+              "Major Geological Processes Associated with Plate Tectonics",
+              "Climate Change",
+              "Management of Conflict Over Resources",
+              "Population Policies, Programs and the Environment",
+              "Challenges of Economic Development",
+              "Solutions to Environmental and Sustainability Problems",
+              "Contemporary Global Geographic Issues and Public Concerns",
+              "Geographical Enquiry and Map Making",
+            ],
+          },
+        },
+        Economics: {
+          gradeStructure: "standard",
+          chapterNames: {
+            g9: [
+              "Introducing Economics",
+              "The Basic Economic Problems and Economic Systems",
+              "Economic Resources and Markerts",
+              "Introduction to Demand and Supply",
+              "Introduction to Production and Cost",
+              "Introduction to Money",
+              "Introduction to Macroeconomics",
+              "Basic Entrepreneurship",
+            ],
+            g10: [
+              "Theory of Consumer Behaviour",
+              "Theories of Demand and Supply",
+              "Theories of Production and Cost",
+              "Market Structure",
+              "Banking and Finance",
+              "Economic Growth",
+              "The Ethiopian Economy",
+              "Business Startups and Innovation",
+            ],
+            g11: [
+              "Theory of Consumer Behavior and Demand",
+              "Market Structure and the Decision of Firms",
+              "National Income Accounting",
+              "Consumption, Saving and Investment",
+              "Trade and Finance",
+              "Economic Development",
+              "Main Sectors, Sectorial Policies and Strategies of Ethiopia",
+            ],
+            g12: [
+              "The Fundamental Concepts of Macroeconomics",
+              "Aggregate Demand and Aggregate Supply Analysis",
+              "Market Failure and Consumer Protection",
+              "Macroeconomic Policy Instruments",
+              "Tax Theory and Practice",
+              "Poverty and Inequality",
+              "Macroeconomic Reforms in Ethiopia",
+              "Economy, Environment and Climate Change",
+            ],
+          },
+        },
+        SAT: {
+          gradeStructure: "none",
+          chapterNames: {
+            all: [
+              "Analogy",
+              "Antonym",
+              "Synonym",
+              "Sentence completion",
+              "Passage",
+              "Choose the odd one",
+              "Analytical and Logical Reasoning",
+              "Data interpretation and statistics",
+              "Geometry",
+              "Sequence",
+              "Probability",
+              "Others SAT Math Questions",
+            ],
+          },
+        },
+      };
+
+      const subjectSelectionPage = document.getElementById(
+        "subjectSelectionPage"
+      );
+      const homePage = document.getElementById("homePage");
+      const quizSection = document.getElementById("quizSection");
+      const container = document.querySelector(".questions-container");
+      const preferenceModal = document.getElementById("preferenceModal");
+      const resultsModal = document.getElementById("resultsModal");
+      const closeResultsModalBtn = document.getElementById("closeResultsModal");
+      const progressBar = document.getElementById("progressBar");
+      const scorePara = document.getElementById("score");
+      const mainContainer = document.querySelector(".container");
+      const themeToggle = document.getElementById("themeToggle");
+      const timerDisplay = document.getElementById("timer");
+      const modeSelectionTitle = document.getElementById("modeSelectionTitle");
+      const backToSubjectsBtn = document.getElementById("backToSubjectsBtn");
+      const showFullExamsBtn = document.getElementById("showFullExamsBtn");
+      const showChaptersBtn = document.getElementById("showChaptersBtn");
+      const fullExamsOptions = document.getElementById("fullExamsOptions");
+      const gradeSelection = document.getElementById("gradeSelection");
+      const chapterNumberSelection = document.getElementById(
+        "chapterNumberSelection"
+      );
+      const nameModal = document.getElementById("nameModal");
+      const avatarModal = document.getElementById("avatarModal");
+      const confirmNameBtn = document.getElementById("confirmName");
+      const confirmAvatarBtn = document.getElementById("confirmAvatar");
+
+      let showAnswersImmediately = false;
+      let userAnswers = [];
+      let isDarkMode = false;
+      let timer;
+      let timeLeft = 10800;
+      let currentQuizMode = "";
+      let correctStreak = 0;
+      let lastCombo = 0;
+      let selectedAvatar = null;
+
+      let correctSoundIndex = 0;
+      let wrongSoundIndex = 0;
+      function playCorrectSound() {
+        document
+          .getElementById(`correctSound${(correctSoundIndex++ % 3) + 1}`)
+          .play();
+      }
+      function playWrongSound() {
+        document
+          .getElementById(`wrongSound${(wrongSoundIndex++ % 3) + 1}`)
+          .play();
+      }
+
+      function getGradeKey(grade, curriculum) {
+        if (grade === "all") return "all";
+        if (curriculum) {
+          return `g${grade}_${curriculum}`;
+        }
+        return `g${grade}`;
+      }
+
+      // This is the new, corrected version
+      function goHome() {
+        closeResultsModal();
+        quizSection.style.display = "none";
+        homePage.style.display = "none"; // Hide the mode selection page
+        subjectSelectionPage.style.display = "flex"; // Show the subject selection page
+
+        // Reset the mode selection views for the next time the user enters it
+        fullExamsOptions.style.display = "none";
+        gradeSelection.style.display = "none";
+        chapterNumberSelection.style.display = "none";
+      }
+
+      function tryAgain() {
+        closeResultsModal();
+        // The renderQuestions function already resets the state and uses the existing `questions` array
+        userAnswers = [];
+
+        renderQuestions();
+
+        // Restart the timer only if it was a full exam
+        if (currentQuizMode === "fullExam") {
+          startTimer();
+        }
+      }
+
+      /**
+       * Analyzes all completed exams to create a summary of exam scores and chapter performance.
+       * @param {Array} studentExamInfo - The list of student exam results (listOfStudentExamInfo).
+       * @param {Object} allExamsData - The main question bank (allExams).
+       * @returns {Object} A structured summary of the student's progress.
+       */
+      function analyzeProgress(studentExamInfo, allExamsData) {
+        const result = {
+          examSummary: {},
+          totalScore: 0,
+          totalOutOf: 0,
+          averageScore: 0,
+          chapterSummary: {},
+        };
+
+        // Create a quick lookup map for all questions by their ID for efficiency
+        const allQuestionsById = {};
+        Object.values(allExamsData)
+          .flat()
+          .forEach((q) => {
+            allQuestionsById[q.id] = q;
+          });
+
+        const completedExams = studentExamInfo.filter(
+          (exam) => exam.isCompleted && exam.total > 0
+        );
+
+        completedExams.forEach((exam) => {
+          // 1. Process Exam Summary (for full exams with a year)
+          if (exam.year) {
+            const examKey = `${exam.subject}_${exam.year}`;
+            const normalizedScore = (exam.score / exam.total) * 100;
+            result.examSummary[examKey] = {
+              normalizedScore: Math.round(normalizedScore),
+            };
+          }
+
+          // 2. Update Total and Average Scores
+          result.totalScore += exam.score;
+          result.totalOutOf += exam.total;
+
+          // 3. Process Chapter Summary using userAnswers
+          exam.userAnswers.forEach((answer) => {
+            const question = allQuestionsById[answer.questionId];
+            if (question && question.assignments) {
+              question.assignments.forEach((assignment) => {
+                const chapterKey = `${question.subject}_g${assignment.grade}_c${assignment.chapter}`;
+
+                // Initialize chapter if it's the first time we see it
+                if (!result.chapterSummary[chapterKey]) {
+                  result.chapterSummary[chapterKey] = { correct: 0, total: 0 };
+                }
+
+                result.chapterSummary[chapterKey].total++;
+                if (answer.isCorrect) {
+                  result.chapterSummary[chapterKey].correct++;
+                }
+              });
+            }
+          });
+        });
+
+        // 4. Calculate final average score
+        if (result.totalOutOf > 0) {
+          result.averageScore = Math.round(
+            (result.totalScore / result.totalOutOf) * 100
+          );
+        }
+
+        // 5. Calculate percentage for each chapter
+        Object.values(result.chapterSummary).forEach((chapter) => {
+          chapter.percent =
+            chapter.total > 0
+              ? Math.round((chapter.correct / chapter.total) * 100)
+              : 0;
+        });
+
+        return result;
+      }
+
+      /**
+       * Takes a progress summary object and populates the results page with the data.
+       * @param {Object} summaryData - The object returned from analyzeProgress.
+       */
+      function displayProgressSummary(summaryData) {
+        // Overall Performance
+        document.getElementById(
+          "totalScoreDisplay"
+        ).textContent = `${summaryData.totalScore} / ${summaryData.totalOutOf}`;
+        document.getElementById("averageScoreDisplay").textContent =
+          summaryData.averageScore;
+
+        // Exam Performance Table
+        const examTbody = document.querySelector("#examSummaryTable tbody");
+        examTbody.innerHTML = ""; // Clear previous results
+        Object.entries(summaryData.examSummary).forEach(([key, value]) => {
+          const [subject, year] = key.split("_");
+          const row = examTbody.insertRow();
+          row.insertCell().textContent = `${subject} ${year}`;
+          row.insertCell().textContent = `${value.normalizedScore} / 100`;
+        });
+
+        // Chapter Performance Table
+        const chapterTbody = document.querySelector(
+          "#chapterSummaryTable tbody"
+        );
+        chapterTbody.innerHTML = ""; // Clear previous results
+        Object.entries(summaryData.chapterSummary).forEach(([key, value]) => {
+          const [subject, gradeStr, chapterStr] = key.split("_");
+          const grade = gradeStr.slice(1);
+          const chapter = chapterStr.slice(1);
+          const row = chapterTbody.insertRow();
+          row.insertCell().textContent = `${subject} Chapter ${chapter} (Grade ${grade})`;
+          row.insertCell().textContent = value.correct;
+          row.insertCell().textContent = value.total;
+          row.insertCell().textContent = `${value.percent}%`;
+        });
+
+        // Show the results page and hide others
+        subjectSelectionPage.style.display = "none";
+        homePage.style.display = "none";
+        quizSection.style.display = "none";
+        document.getElementById("allResultsPage").style.display = "block";
+      }
+
+      // Add event listeners for the new buttons
+      document
+        .getElementById("viewAllResultsBtn")
+        .addEventListener("click", () => {
+          // Analyze the stored progress and display it
+          const summary = analyzeProgress(listOfStudentExamInfo, allExams);
+          displayProgressSummary(summary);
+        });
+
+      document
+        .getElementById("backToHomeFromResults")
+        .addEventListener("click", () => {
+          // Hide the results page and show the main subject selection
+          document.getElementById("allResultsPage").style.display = "none";
+          subjectSelectionPage.style.display = "flex";
+        });
+
+      /**
+       * Analyzes all completed exams to create a summary of exam scores and chapter performance.
+       * @param {Array} studentExamInfo - The list of student exam results (listOfStudentExamInfo).
+       * @param {Object} allExamsData - The main question bank (allExams).
+       * @returns {Object} A structured summary of the student's progress.
+       */
+
+      // REPLACE your existing analyzeProgress function with this one:
+
+      /**
+       * Analyzes completed exams to create a summary of scores, separating Full Exam and Chapter performance.
+       * @param {Array} studentExamInfo - The list of student exam results (listOfStudentExamInfo).
+       * @param {Object} allExamsData - The main question bank (allExams).
+       * @returns {Object} A structured summary of the student's progress.
+       */
+      function analyzeProgress(studentExamInfo, allExamsData) {
+        const result = {
+          examSummary: {},
+          totalScore: 0,
+          totalOutOf: 0,
+          averageScore: 0,
+          chapterSummary: {},
+        };
+
+        // Create a quick lookup map for all questions by their ID for efficiency
+        const allQuestionsById = {};
+        Object.values(allExamsData)
+          .flat()
+          .forEach((q) => {
+            allQuestionsById[q.id] = q;
+          });
+
+        const completedExams = studentExamInfo.filter(
+          (exam) => exam.isCompleted && exam.total > 0
+        );
+
+        completedExams.forEach((exam) => {
+          // --- THIS IS THE CORE LOGIC CHANGE ---
+          // We now separate the logic based on the type of quiz that was taken.
+          // We can determine the type by checking if the 'year' property exists.
+
+          // 1. Update overall scores regardless of quiz type
+          result.totalScore += exam.score;
+          result.totalOutOf += exam.total;
+
+          if (exam.year) {
+            // This is a FULL EXAM result because it has a year.
+            // ONLY update the 'Full Exam Performance' summary.
+            const examKey = `${exam.subject}_${exam.year}`;
+            const normalizedScore = (exam.score / exam.total) * 100;
+            result.examSummary[examKey] = {
+              normalizedScore: Math.round(normalizedScore),
+            };
+          } else {
+            // This is a CHAPTER QUIZ result because it does NOT have a year.
+            // ONLY update the 'Chapter Performance' summary.
+            exam.userAnswers.forEach((answer) => {
+              const question = allQuestionsById[answer.questionId];
+              if (question && question.assignments) {
+                question.assignments.forEach((assignment) => {
+                  const chapterKey = `${question.subject}_g${assignment.grade}_c${assignment.chapter}`;
+
+                  if (!result.chapterSummary[chapterKey]) {
+                    result.chapterSummary[chapterKey] = {
+                      correct: 0,
+                      total: 0,
+                    };
+                  }
+
+                  result.chapterSummary[chapterKey].total++;
+                  if (answer.isCorrect) {
+                    result.chapterSummary[chapterKey].correct++;
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        // 2. Calculate final average score (this remains the same)
+        if (result.totalOutOf > 0) {
+          result.averageScore = Math.round(
+            (result.totalScore / result.totalOutOf) * 100
+          );
+        }
+
+        // 3. Calculate percentage for each chapter (this remains the same)
+        Object.values(result.chapterSummary).forEach((chapter) => {
+          chapter.percent =
+            chapter.total > 0
+              ? Math.round((chapter.correct / chapter.total) * 100)
+              : 0;
+        });
+
+        return result;
+      }
+
+      function generateQuizId(mode, subject, year, grade, chapter, curriculum) {
+        if (mode === "fullExam") {
+          return `quiz_${subject}_${year}`;
+        } else if (mode === "chapter") {
+          const curriculumId = curriculum || "na"; // 'na' for not-applicable
+          return `quiz_${subject}_g${grade}_c${chapter}_${curriculumId}`;
+        }
+        return null;
+      }
+
+      /**
+       * Checks localStorage for an unfinished quiz and asks the user if they want to resume.
+       */
+      function checkForUnfinishedQuiz() {
+        const savedQuizJSON = localStorage.getItem("inProgressQuiz");
+        if (savedQuizJSON) {
+          const savedData = JSON.parse(savedQuizJSON);
+          const wantsToResume = window.confirm(
+            `You have an unfinished quiz for ${savedData.subject}. Do you want to resume?`
+          );
+          if (wantsToResume) {
+            resumeQuiz(savedData);
+          } else {
+            // User chose not to resume, so clear the saved data.
+            localStorage.removeItem("inProgressQuiz");
+          }
+        }
+      }
+
+      /**
+       * Restores the quiz state and UI from saved data.
+       */
+
+      // REPLACE the old resumeQuiz function with this one
+
+      /**
+       * Restores the quiz state and UI from lean saved data.
+       * It rebuilds the question list using saved parameters.
+       */
+      function resumeQuiz(savedData) {
+        // 1. Restore global state variables from saved data
+        selectedSubject = savedData.subject;
+        userAnswers = savedData.userAnswers || [];
+        currentQuizId = savedData.quizId;
+        currentQuizMode = savedData.currentQuizMode;
+        currentQuizParams = savedData.quizParams; // Restore quiz parameters
+        showAnswersImmediately = savedData.showAnswersImmediately;
+
+        // 2. Rebuild the 'questions' array from the master list
+        let questionsForQuiz = [];
+        const allQuestionsForSubject = allExams[selectedSubject] || [];
+
+        if (currentQuizMode === "fullExam") {
+          questionsForQuiz = allQuestionsForSubject.filter(
+            (q) => q.examYear === currentQuizParams.year
+          );
+        } else if (currentQuizMode === "chapter") {
+          questionsForQuiz = allQuestionsForSubject.filter((q) => {
+            if (!q.assignments || q.assignments.length === 0) return false;
+            return q.assignments.some(
+              (assignment) =>
+                assignment.grade === currentQuizParams.gradeFilter &&
+                assignment.chapter === currentQuizParams.chapterFilter &&
+                (assignment.curriculum === currentQuizParams.curriculumFilter ||
+                  currentQuizParams.curriculumFilter === null)
+            );
+          });
+        }
+        questions = questionsForQuiz; // The questions are now rebuilt
+
+        // 3. Set up the UI (this part is mostly the same)
+        subjectSelectionPage.style.display = "none";
+        homePage.style.display = "none";
+        quizSection.style.display = "block";
+
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.remove("blurred");
+
+        // 4. Restore User Profile and Quiz Info
+        displayUserName(savedData.userName);
+        setAvatar(savedData.avatar);
+        document.getElementById("quizTitle").textContent = savedData.quizTitle;
+        document.querySelector(
+          ".SUBJECT_CODE"
+        ).textContent = `SUBJECT: ${savedData.subject.toUpperCase()}`;
+
+        const isFullExam = currentQuizMode === "fullExam";
+        const profileUI = [
+          document.querySelector(".profile-picture-container"),
+          document.getElementById("userNameDisplay"),
+          document.getElementById("timerProgressContainer"),
+          document.getElementById("streakProgressContainer"),
+        ];
+        profileUI.forEach(
+          (el) => (el.style.display = isFullExam ? "block" : "none")
+        );
+        timerDisplay.style.display = isFullExam ? "block" : "none";
+
+        // 5. Render questions and re-apply previous answers (this part is the same)
+        renderQuestions();
+
+        userAnswers.forEach((answer) => {
+          const qElement = document.getElementById(answer.questionId);
+          if (!qElement) return;
+
+          qElement.classList.remove("blurred");
+          qElement.classList.add("active");
+          const startButton = document.querySelector(
+            `.start-button[data-question-id="${qElement.id}"]`
+          );
+          if (startButton) startButton.style.display = "none";
+
+          const selectedOpt = Array.from(
+            qElement.querySelectorAll(".option")
+          ).find((o) => o.textContent === answer.answer);
+          if (selectedOpt) {
+            selectedOpt.classList.add("selected");
+            if (showAnswersImmediately) {
+              selectedOpt.classList.add(
+                answer.isCorrect ? "correct" : "incorrect"
+              );
+              if (!answer.isCorrect) {
+                qElement
+                  .querySelector(".option[data-correct='true']")
+                  .classList.add("correct");
+              }
+              qElement.querySelector(".show-answer").style.display = "block";
+            }
+          }
+          qElement
+            .querySelectorAll(".option")
+            .forEach((opt) => (opt.style.pointerEvents = "none"));
+        });
+
+        MathJax.typeset();
+
+        if (isFullExam) {
+          startTimer();
+        }
+      }
+
+      function askToQuit() {
+        const userConfirmed = window.confirm(
+          "Are you sure you want to quit this quiz? Your progress has been saved."
+        );
+
+        if (userConfirmed) {
+          // Create the state object that contains everything needed to resume later.
+          const quizState = {
+            quizId: currentQuizId, // The unique ID for this quiz
+            subject: selectedSubject,
+            questions: questions,
+            userAnswers: userAnswers,
+            currentQuizMode: currentQuizMode,
+            showAnswersImmediately: showAnswersImmediately,
+            userName: document.getElementById("userNameDisplay").textContent,
+            avatar: document.querySelector(".profile-picture").src,
+            quizTitle: document.getElementById("quizTitle").textContent,
+          };
+
+          // Save the state to localStorage using the unique quiz ID as the key.
+          localStorage.setItem(currentQuizId, JSON.stringify(quizState));
+
+          // Stop the timer if it's running.
+          if (timer) {
+            clearInterval(timer);
+          }
+
+          // Hide the quiz UI and show the home page.
+          quizSection.style.display = "none";
+
+          homePage.style.display = "flex";
+
+          // Reset the mode selection views on the home page.
+          fullExamsOptions.style.display = "none";
+          gradeSelection.style.display = "none";
+          chapterNumberSelection.style.display = "none";
+        }
+        // If the user cancels, do nothing.
+      }
+      function init() {
+        themeToggle.addEventListener("click", toggleTheme);
+        document.getElementById("goHomeBtn").addEventListener("click", goHome);
+        document
+          .getElementById("tryAgainBtn")
+          .addEventListener("click", tryAgain);
+
+        document.querySelectorAll(".subject-btn").forEach((button) => {
+          button.addEventListener("click", (e) => {
+            selectedSubject = e.target.dataset.subject;
+            subjectSelectionPage.style.display = "none";
+            homePage.style.display = "flex";
+            modeSelectionTitle.textContent = `Select a Practice Mode for ${selectedSubject}`;
+            fullExamsOptions.style.display = "none";
+            gradeSelection.style.display = "none";
+            chapterNumberSelection.style.display = "none";
+          });
+        });
+
+        backToSubjectsBtn.addEventListener("click", () => {
+          homePage.style.display = "none";
+          subjectSelectionPage.style.display = "flex";
+          selectedSubject = "";
+        });
+
+        showFullExamsBtn.addEventListener("click", () => {
+          populateYearButtons();
+          fullExamsOptions.style.display = "flex";
+          gradeSelection.style.display = "none";
+          chapterNumberSelection.style.display = "none";
+        });
+
+        showChaptersBtn.addEventListener("click", () => {
+          fullExamsOptions.style.display = "none";
+          chapterNumberSelection.style.display = "none";
+          const metadata = subjectMetadata[selectedSubject];
+          if (metadata.gradeStructure === "none") {
+            populateChaptersForGrade("all", null);
+          } else {
+            populateGradeButtons();
+            gradeSelection.style.display = "flex";
+          }
+        });
+
+        document
+          .getElementById("showImmediately")
+          .addEventListener("click", () => setPreference(true));
+        document
+          .getElementById("showAtEnd")
+          .addEventListener("click", () => setPreference(false));
+        document
+          .getElementById("closeGoodLuckModal")
+          .addEventListener("click", closeGoodLuckModal);
+
+        confirmNameBtn.addEventListener("click", () => {
+          const userNameInput = document
+            .getElementById("userNameInput")
+            .value.trim();
+          if (userNameInput) {
+            displayUserName(userNameInput);
+            hideNameModal();
+            setTimeout(showAvatarModal, 300);
+          } else {
+            alert("Please enter your name.");
+          }
+        });
+        document.querySelectorAll(".avatar-option").forEach((avatar) => {
+          avatar.addEventListener("click", () => {
+            document
+              .querySelectorAll(".avatar-option")
+              .forEach((a) => a.classList.remove("selected"));
+            avatar.classList.add("selected");
+            selectedAvatar = avatar.getAttribute("src");
+          });
+        });
+        confirmAvatarBtn.addEventListener("click", () => {
+          if (selectedAvatar) {
+            setAvatar(selectedAvatar);
+            hideAvatarModal();
+            setTimeout(showPreferenceModal, 300);
+          } else {
+            alert("Please select an avatar.");
+          }
+        });
+      }
+
+      function populateGradeButtons() {
+        const metadata = subjectMetadata[selectedSubject];
+        const gradeContainer = document.getElementById("gradeSelection");
+        gradeContainer.innerHTML = "<h2>Select Grade</h2>";
+        const gradesToShow = {
+          new_old: ["9-new", "9-old", "10-new", "10-old", "11", "12"],
+          standard: ["9", "10", "11", "12"],
+        };
+        const gradeList = gradesToShow[metadata.gradeStructure];
+
+        gradeList.forEach((gradeItem) => {
+          const btn = document.createElement("button");
+          btn.className = "grade-btn btn-primary"; // <-- THE FIX
+          if (gradeItem.includes("-")) {
+            const [grade, curriculum] = gradeItem.split("-");
+            btn.dataset.grade = grade;
+            btn.dataset.curriculum = curriculum;
+            btn.textContent = `Grade ${grade} (${
+              curriculum.charAt(0).toUpperCase() + curriculum.slice(1)
+            })`;
+          } else {
+            btn.dataset.grade = gradeItem;
+            btn.dataset.curriculum = "null";
+            btn.textContent = `Grade ${gradeItem}`;
+          }
+          btn.addEventListener("click", (e) => {
+            const grade = e.target.dataset.grade;
+            const curriculum =
+              e.target.dataset.curriculum === "null"
+                ? null
+                : e.target.dataset.curriculum;
+            populateChaptersForGrade(grade, curriculum);
+          });
+          gradeContainer.appendChild(btn);
+        });
+      }
+
+      function populateChaptersForGrade(selectedGrade, selectedCurriculum) {
+        gradeSelection.style.display = "none";
+        chapterNumberSelection.innerHTML = `<h2>Select Chapter/Topic</h2>`;
+
+        const gradeKey = getGradeKey(selectedGrade, selectedCurriculum);
+        const specificChapterList =
+          subjectMetadata[selectedSubject]?.chapterNames[gradeKey];
+
+        if (!specificChapterList) {
+          chapterNumberSelection.innerHTML += `<p>No chapter data found for this selection.</p>`;
+          chapterNumberSelection.style.display = "flex";
+          return;
+        }
+
+        const chapterSet = new Set();
+        const allQuestionsForSubject = allExams[selectedSubject] || [];
+        allQuestionsForSubject.forEach((question) => {
+          if (!question.assignments) return;
+          question.assignments.forEach((assignment) => {
+            const assignmentKey = getGradeKey(
+              assignment.grade,
+              assignment.curriculum
+            );
+            // FIX: Use startsWith for a more flexible match.
+            // This allows selecting a generic grade (e.g., G12) to find questions
+            // assigned to a specific curriculum (e.g., G12_new).
+            if (assignmentKey.startsWith(gradeKey)) {
+              chapterSet.add(assignment.chapter);
+            }
+          });
+        });
+
+        const availableChapters = Array.from(chapterSet).sort((a, b) => a - b);
+
+        if (availableChapters.length === 0) {
+          chapterNumberSelection.innerHTML += `<p>No questions found for this selection.</p>`;
+          chapterNumberSelection.style.display = "flex";
+          return;
+        }
+        availableChapters.forEach((chapterNum) => {
+          const btn = document.createElement("button");
+          btn.className = "chapter-btn btn-primary"; // <-- THE FIX
+
+          const chapterName =
+            specificChapterList[chapterNum - 1] || `Chapter ${chapterNum}`;
+
+          btn.textContent = `Chapter ${chapterNum}: ${chapterName}`;
+          btn.dataset.grade = selectedGrade;
+          btn.dataset.chapter = chapterNum;
+          btn.dataset.curriculum = selectedCurriculum;
+          btn.addEventListener("click", handleGradeAndChapterSelection);
+          chapterNumberSelection.appendChild(btn);
+        });
+        chapterNumberSelection.style.display = "flex";
+      }
+
+      function handleGradeAndChapterSelection(event) {
+        const { grade, chapter, curriculum } = event.target.dataset;
+        const chapterNum = parseInt(chapter, 10);
+        const curriculumVal = curriculum === "null" ? null : curriculum;
+
+        const gradeKey = getGradeKey(grade, curriculumVal);
+        const specificChapterList =
+          subjectMetadata[selectedSubject]?.chapterNames[gradeKey];
+        const chapterName =
+          specificChapterList[chapterNum - 1] || `Chapter ${chapterNum}`;
+
+        const title = `${selectedSubject} - Grade ${grade} - ${chapterName}`;
+
+        // Pass all parameters to the updated startQuiz function
+        startQuiz("chapter", null, title, chapterNum, grade, curriculumVal);
+      }
+
+      function startQuiz(
+        quizMode,
+        year,
+        titleOverride,
+        chapterFilter,
+        gradeFilter,
+        curriculumFilter
+      ) {
+        const quizId = generateQuizId(
+          quizMode,
+          selectedSubject,
+          year,
+          gradeFilter,
+          chapterFilter,
+          curriculumFilter
+        );
+        const savedQuizJSON = localStorage.getItem(quizId);
+
+        if (savedQuizJSON) {
+          const savedData = JSON.parse(savedQuizJSON);
+          const wantsToResume = window.confirm(
+            `You have an unfinished session for this quiz. Do you want to resume?`
+          );
+
+          if (wantsToResume) {
+            resumeQuiz(savedData);
+            return; // Stop here, the quiz is resumed.
+          } else {
+            // User does not want to resume, so clear the old data and start fresh.
+            localStorage.removeItem(quizId);
+          }
+        }
+
+        // --- Proceed to start a fresh quiz ---
+        currentQuizId = quizId; // Set the ID for the new session
+        currentQuizMode = quizMode;
+        currentQuizParams = {
+          year,
+          chapterFilter,
+          gradeFilter,
+          curriculumFilter,
+        }; // <<< ADD THIS LINE
+
+        let questionsForQuiz = [];
+        const allQuestionsForSubject = allExams[selectedSubject] || [];
+
+        if (quizMode === "fullExam") {
+          questionsForQuiz = allQuestionsForSubject.filter(
+            (q) => q.examYear === year
+          );
+        } else if (quizMode === "chapter") {
+          questionsForQuiz = allQuestionsForSubject.filter((q) => {
+            if (!q.assignments || q.assignments.length === 0) return false;
+            return q.assignments.some(
+              (assignment) =>
+                assignment.grade === gradeFilter &&
+                assignment.chapter === chapterFilter &&
+                (assignment.curriculum === curriculumFilter ||
+                  curriculumFilter === null)
+            );
+          });
+        }
+
+        questions = questionsForQuiz;
+        if (!questions || questions.length === 0) {
+          alert("Sorry, no questions found for this selection.");
+          return;
+        }
+
+        userAnswers = [];
+        const quizTitle = document.getElementById("quizTitle");
+        const subjectCode = document.querySelector(".SUBJECT_CODE");
+
+        if (titleOverride) {
+          quizTitle.textContent = titleOverride;
+        } else {
+          quizTitle.textContent = `GRADE 12 MODEL EXAMINATIONS ${year}G.C.`;
+        }
+        subjectCode.textContent = `SUBJECT: ${selectedSubject.toUpperCase()}`;
+
+        homePage.style.display = "none";
+        quizSection.style.display = "block";
+
+        renderQuestions();
+
+        const isFullExam = quizMode === "fullExam";
+        const profileUI = [
+          document.querySelector(".profile-picture-container"),
+          document.getElementById("userNameDisplay"),
+          document.getElementById("timerProgressContainer"),
+          document.getElementById("streakProgressContainer"),
+        ];
+        profileUI.forEach(
+          (el) => (el.style.display = isFullExam ? "block" : "none")
+        );
+        timerDisplay.style.display = isFullExam ? "block" : "none";
+
+        if (isFullExam) {
+          showNameModal();
+        } else {
+          showPreferenceModal();
+        }
+      }
+
+      function populateYearButtons() {
+        fullExamsOptions.innerHTML = "<h2>Select Exam Year</h2>";
+        const allQuestionsForSubject = allExams[selectedSubject] || [];
+        const years = [
+          ...new Set(
+            allQuestionsForSubject
+              .map((q) => q.examYear)
+              .filter((year) => year !== null)
+          ),
+        ].sort((a, b) => b - a);
+        if (years.length === 0) {
+          fullExamsOptions.innerHTML +=
+            "<p>No full exams available for this subject.</p>";
+        } else {
+          years.forEach((year) => {
+            const btn = document.createElement("button");
+            btn.className = "year-btn btn-primary"; // <-- THE FIX
+            btn.dataset.year = year;
+            btn.textContent = `${year} G.C.`;
+            btn.addEventListener("click", (e) =>
+              startQuiz("fullExam", e.target.dataset.year)
+            );
+            fullExamsOptions.appendChild(btn);
+          });
+        }
+      }
+
+      function renderQuestions() {
+        container.innerHTML = "";
+        correctStreak = 0;
+        lastCombo = 0;
+        let questionCounter = 0; // Use a separate counter for question numbering
+
+        questions.forEach((item) => {
+          const itemType = item.type || "question"; // Default to 'question' if type is not specified
+
+          if (
+            itemType === "instruction" ||
+            itemType === "passage" ||
+            itemType === "topic"
+          ) {
+            // Replace newlines with <br> tags for these item types
+            const formattedText = item.text.replace(/\n/g, "<br>");
+            container.insertAdjacentHTML(
+              "beforeend",
+              `<div class="${itemType}-item">${formattedText}</div>`
+            );
+          } else {
+            // This is a standard question
+            questionCounter++;
+            const optionsHTML = item.options
+              .map(
+                (option) =>
+                  `<div class="option" data-correct="${option.correct}">${option.text}</div>`
+              )
+              .join("");
+
+            // Replace newlines with <br> tags in question text
+            const formattedQuestionText = item.text.replace(/\n/g, "<br>");
+            // Replace newlines with <br> tags in explanation if it exists
+            const formattedExplanation = item.explanation
+              ? item.explanation.replace(/\n/g, "<br>")
+              : "";
+
+            container.insertAdjacentHTML(
+              "beforeend",
+              `
+    <div class="question" id="${item.id}">
+        <div class="question-content">
+            <p>${questionCounter}. ${formattedQuestionText}</p>
+            ${
+              item.image
+                ? `<img src="${item.image}" alt="Question Image" style="max-width: 100%; height: auto; margin-top: 10px;">`
+                : ""
+            }
+        </div>
+        <div class="options">${optionsHTML}</div>
+        <button class="show-answer" data-question-id="${
+          item.id
+        }">Show Answer</button>
+        <div class="answer"><strong>Explanation:</strong> ${formattedExplanation}</div>
+    </div>`
+            );
+          }
+        });
+
+        document
+          .querySelectorAll(".option")
+          .forEach((o) => o.addEventListener("click", handleOptionClick));
+        document
+          .querySelectorAll(".show-answer")
+          .forEach((b) => b.addEventListener("click", handleShowAnswerClick));
+
+        MathJax.typeset();
+      }
+
+      function handleOptionClick(event) {
+        const option = event.target.closest(".option");
+        const question = option.closest(".question");
+        if (!question || question.querySelector(".option.selected")) return;
+
+        const isCorrect = option.dataset.correct === "true";
+        option.classList.add("selected");
+        question
+          .querySelectorAll(".option")
+          .forEach((opt) => (opt.style.pointerEvents = "none"));
+        userAnswers.push({
+          questionId: question.id,
+          isCorrect,
+          answer: option.textContent,
+        });
+
+        saveQuizProgress();
+
+        if (showAnswersImmediately) {
+          if (isCorrect) {
+            correctStreak++;
+            playCorrectSound();
+          } else {
+            correctStreak = 0;
+            playWrongSound();
+          }
+          updateStreakProgressBar(correctStreak);
+          checkForCombo(correctStreak);
+          option.classList.add(isCorrect ? "correct" : "incorrect");
+          if (!isCorrect)
+            question
+              .querySelector(".option[data-correct='true']")
+              .classList.add("correct");
+          question.querySelector(".show-answer").style.display = "block";
+        }
+
+        // Only count actual questions for the total
+        const totalQuestions = questions.filter(
+          (q) => (q.type || "question") === "question"
+        ).length;
+        if (userAnswers.length === totalQuestions) {
+          showResults();
+        }
+      }
+
+      function handleShowAnswerClick(event) {
+        const question = document.getElementById(
+          event.target.dataset.questionId
+        );
+        question.querySelector(".answer").style.display = "block";
+      }
+
+      function showResults() {
+        localStorage.removeItem(currentQuizId);
+        if (currentQuizMode === "fullExam") clearInterval(timer);
+        const correctAnswers = userAnswers.filter((a) => a.isCorrect).length;
+        const totalQuestions = questions.filter(
+          (q) => (q.type || "question") === "question"
+        ).length;
+
+        // Create a new progress record instance
+        const progress = new ExamProgress({
+          subject: selectedSubject,
+          // Use quizParams to get the year for full exams
+          year: currentQuizMode === "fullExam" ? currentQuizParams.year : null,
+          score: correctAnswers,
+          total: totalQuestions,
+          isCompleted: true,
+          userAnswers: userAnswers, // Pass the detailed answers
+        });
+
+        // Convert the instance to a plain map
+        const progressMap = progress.toMap();
+
+        // Add the plain map to our global history array
+        listOfStudentExamInfo.push(progressMap);
+
+        localStorage.setItem(
+          "studentProgressData",
+          JSON.stringify(listOfStudentExamInfo)
+        );
+
+        // Send the result to the Flutter side via JavaScript channel, if it exists.
+        // The `if (window.ProgressChannel)` check prevents errors when running in a browser.
+        if (window.ProgressChannel) {
+          try {
+            ProgressChannel.postMessage(JSON.stringify(progressMap));
+          } catch (e) {
+            console.error("Error posting message to ProgressChannel:", e);
+          }
+        } else {
+          console.log("ProgressChannel not found. Quiz Result:", progressMap);
+        }
+
+        const progressPercentage =
+          totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+        progressBar.style.width = `${progressPercentage}%`;
+
+        scorePara.textContent = `Your Score: ${correctAnswers} / ${totalQuestions}`;
+
+        const max = calculateMaxStreak();
+        document.getElementById(
+          "maxStreak"
+        ).textContent = `🔥MAX COMBO: ${max}`;
+
+        const accuracy = calculateAccuracyStars(correctAnswers, totalQuestions);
+        document.getElementById("accuracyStars").innerHTML =
+          "★".repeat(accuracy) + "☆".repeat(5 - accuracy);
+
+        const timeUsage = calculateTimeUsageStars(timeLeft);
+        document.getElementById("timeUsageStars").innerHTML =
+          "★".repeat(timeUsage) + "☆".repeat(5 - timeUsage);
+
+        const avgTime =
+          totalQuestions > 0 ? (10800 - timeLeft) / totalQuestions : 0;
+        document.getElementById(
+          "averageTimePerQuestion"
+        ).textContent = `⏳Average Time per Question: ${avgTime.toFixed(
+          2
+        )} seconds`;
+
+        progressPercentage >= 50
+          ? document.getElementById("completedSound").play()
+          : document.getElementById("failedSound").play();
+
+        setTimeout(() => {
+          resultsModal.classList.add("active");
+          document
+            .querySelector(".main-container-for-blur")
+            .classList.add("blurred");
+          if (progressPercentage === 100) triggerConfetti();
+          if (!showAnswersImmediately && userAnswers.length > 0) {
+            userAnswers.forEach((answer) => {
+              const qElement = document.getElementById(answer.questionId);
+              if (qElement) {
+                const selectedOpt = Array.from(
+                  qElement.querySelectorAll(".option")
+                ).find((o) => o.textContent === answer.answer);
+                if (selectedOpt) {
+                  selectedOpt.classList.add(
+                    answer.isCorrect ? "correct" : "incorrect"
+                  );
+                }
+                if (!answer.isCorrect) {
+                  const correctOpt = qElement.querySelector(
+                    ".option[data-correct='true']"
+                  );
+                  if (correctOpt) correctOpt.classList.add("correct");
+                }
+                const showAnswerBtn = qElement.querySelector(".show-answer");
+                if (showAnswerBtn) showAnswerBtn.style.display = "block";
+              }
+            });
+          }
+        }, 1500);
+      }
+
+      function setPreference(preference) {
+        showAnswersImmediately = preference;
+        preferenceModal.classList.remove("active");
+        if (!showAnswersImmediately) showGoodLuckModal();
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.remove("blurred");
+        if (currentQuizMode === "fullExam") startTimer();
+      }
+
+      function updateStreakProgressBar(streak) {
+        const bar = document.getElementById("streakProgressBar");
+        const progress = Math.min((streak / 10) * 100, 100);
+        bar.style.width = `${progress}%`;
+      }
+
+      function checkForCombo(correctStreak) {
+        const comboPopup = document.getElementById("comboPopup");
+
+        // Define combo milestones and their corresponding messages
+        const comboMilestones = [
+          {
+            streak: 3,
+            message: "🔥💪 3-in-a-Row Bravo!",
+            className: "fire",
+          },
+          {
+            streak: 5,
+            message: "🚀🎉 5-in-a-Row Amazing!",
+            className: "unstoppable",
+          },
+          {
+            streak: 7,
+            message: "⚡🧠 7-in-a-Row Genius!",
+            className: "genius",
+          },
+          {
+            streak: 10,
+            message: "👑✨ 10-in-a-Row Wonderful!",
+            className: "legendary",
+          },
+          {
+            streak: 25,
+            message: "🔥🎯 25-in-a-Row Incredible!",
+            className: "blazing",
+          },
+          {
+            streak: 50,
+            message: "🌟💎 50-in-a-Row Outstanding!",
+            className: "dominance",
+          },
+          {
+            streak: 70,
+            message: "🔥🚧 70-in-a-Row So Close!",
+            className: "almost-there",
+          },
+          {
+            streak: 74,
+            message: "⚡🏁 74-in-a-Row One More!",
+            className: "one-more",
+          },
+          {
+            streak: 75,
+            message: "🏆💎 75-in-a-Row Perfect!",
+            className: "perfection",
+          },
+        ];
+
+        // Check if the current streak matches a milestone
+        for (const milestone of comboMilestones) {
+          if (
+            correctStreak === milestone.streak &&
+            lastCombo < milestone.streak
+          ) {
+            // Update the last combo milestone reached
+            lastCombo = milestone.streak;
+
+            // Set the pop-up message and style
+            comboPopup.textContent = milestone.message;
+            comboPopup.className = `combo-popup active ${milestone.className}`;
+
+            // Show the pop-up
+            setTimeout(() => {
+              comboPopup.classList.remove("active");
+            }, 3000); // Hide the pop-up after 3 seconds
+            break;
+          }
+        }
+      }
+
+      function triggerConfetti() {
+        const container = document.getElementById("confettiContainer");
+        container.innerHTML = "";
+        for (let i = 0; i < 100; i++) {
+          const piece = document.createElement("div");
+          piece.className = "confetti-piece";
+          piece.style.left = `${Math.random() * 100}vw`;
+          piece.style.animationDelay = `${Math.random() * 2}s`;
+          piece.style.backgroundColor = `hsl(${
+            Math.random() * 360
+          }, 100%, 50%)`;
+          container.appendChild(piece);
+        }
+        setTimeout(() => (container.innerHTML = ""), 2000);
+      }
+
+      function calculateMaxStreak() {
+        let max = 0,
+          current = 0;
+        userAnswers.forEach((a) => {
+          current = a.isCorrect ? current + 1 : 0;
+          if (current > max) max = current;
+        });
+        return max;
+      }
+
+      function calculateAccuracyStars(correct, total) {
+        const p = total > 0 ? (correct / total) * 100 : 0;
+        if (p >= 90) return 5;
+        if (p >= 70) return 4;
+        if (p >= 50) return 3;
+        if (p >= 30) return 2;
+        return 1;
+      }
+
+      function calculateTimeUsageStars(time) {
+        const p = ((10800 - time) / 10800) * 100;
+        if (p <= 20) return 5;
+        if (p <= 40) return 4;
+        if (p <= 60) return 3;
+        if (p <= 80) return 2;
+        return 1;
+      }
+
+      function showNameModal() {
+        nameModal.classList.add("active");
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.add("blurred");
+      }
+
+      function hideNameModal() {
+        nameModal.classList.remove("active");
+      }
+      function displayUserName(name) {
+        document.getElementById("userNameDisplay").textContent = name;
+      }
+      function showAvatarModal() {
+        avatarModal.classList.add("active");
+        // Ensure the blur is active when this modal shows.
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.add("blurred");
+      }
+      function hideAvatarModal() {
+        avatarModal.classList.remove("active");
+      }
+      function setAvatar(avatarSrc) {
+        document.querySelector(".profile-picture").src = avatarSrc;
+      }
+      function showPreferenceModal() {
+        1;
+        preferenceModal.classList.add("active");
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.add("blurred");
+      }
+      function showGoodLuckModal() {
+        document.getElementById("goodLuckModal").classList.add("active");
+      }
+      function closeGoodLuckModal() {
+        document.getElementById("goodLuckModal").classList.remove("active");
+      }
+      function closeResultsModal() {
+        resultsModal.classList.remove("active");
+        document
+          .querySelector(".main-container-for-blur")
+          .classList.remove("blurred");
+      }
+
+      function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.body.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+        themeToggle.textContent = isDarkMode ? "Light Mode 💡" : "Dark Mode 🌙";
+      }
+
+      function startTimer() {
+        timeLeft = 10800;
+        updateTimer(); // Initial call to display time immediately
+        timer = setInterval(updateTimer, 1000);
+      }
+
+      function updateTimer() {
+        const h = Math.floor(timeLeft / 3600),
+          m = Math.floor((timeLeft % 3600) / 60),
+          s = timeLeft % 60;
+        timerDisplay.textContent = `${String(h).padStart(2, "0")}:${String(
+          m
+        ).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        document.getElementById("timerProgressBar").style.width = `${
+          (timeLeft / 10800) * 100
+        }%`;
+        if (timeLeft-- <= 0) {
+          clearInterval(timer);
+          showResults();
+        }
+      }
+
+      // Initialize the application
+      init();
+    </script>
+  </body>
+</html>
